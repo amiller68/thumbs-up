@@ -7,13 +7,18 @@ allow = [
   "Unlicense",
   "ISC",
   "BSD-2-Clause",
+  "BSD-3-Clause",
+  "LicenseRef-LICENSE",
 ]
 
 private = { ignore = true }
 
 [bans]
 # Deny specific crate versions
-multiple-versions = "deny"
+# TODO: i need to make this more restrictive,
+#  but that would require me to fork and fix 
+#   some things in jwt-simple
+multiple-versions = "allow"
 
 # An example of banning a crate
 # crates = [

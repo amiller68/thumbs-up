@@ -1,8 +1,8 @@
 [package]
 name = "thumbs-up"
-license = "MIT"
 version = "0.0.0"
 edition = "2021"
+license = "LicenseRef-LICENSE"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

@@ -1,6 +1,10 @@
 [workspace]
 resolver = "2"
 members = ["crates/thumbs-up", "crates/http"]
+cargo-features = ["minimal-versions"]
+
+[workspace.dependencies]
+regex-automata = "^0.4"
 
 [profile.release]
 codegen-units = 1
