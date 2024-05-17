@@ -1,4 +1,5 @@
 mod api;
+mod extractors;
 mod version;
 
 pub mod app;

@@ -21,7 +21,7 @@ RUN apt-get update -y \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy the server binary to the /app directory
-COPY --from=builder /app/target/release/thumbs_up_http /app/
+COPY --from=builder /app/target/release/http /app/
 
 # Set any required env variables and
 ENV RUST_LOG="info"

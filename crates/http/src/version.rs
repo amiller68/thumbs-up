@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 pub struct Version {
     build_profile: String,
     build_features: String,
-    repo_version: String,
     version: String,
 }
 
@@ -21,7 +20,6 @@ impl Version {
         Self {
             build_profile: env!("BUILD_PROFILE").to_string(),
             build_features: env!("BUILD_FEATURES").to_string(),
-            repo_version: env!("REPO_VERSION").to_string(),
             version: env!("CARGO_PKG_VERSION").to_string(),
         }
     }
@@ -32,10 +30,6 @@ impl Version {
 
     pub fn build_features(&self) -> &str {
         &self.build_features
-    }
-
-    pub fn repo_version(&self) -> &str {
-        &self.repo_version
     }
 
     pub fn version(&self) -> &str {

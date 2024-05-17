@@ -1,14 +1,25 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use axum::extract::FromRef;
 
-use thumbs_up::prelude::{hex_fingerprint, EcPublicKey, KeyError, PublicKey};
+use thumbs_up::prelude::{EcPublicKey, KeyError, PublicKey};
 
 use super::config::Config;
 
-#[derive(Clone, Debug, FromRef)]
+#[derive(Clone, Debug)]
+pub struct AllowedAudiences(pub(crate) HashSet<String>);
+
+impl Deref for AllowedAudiences {
+    type Target = HashSet<String>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct PublicKeyRegistry(Arc<Mutex<HashMap<String, (String, EcPublicKey)>>>);
 
 impl PublicKeyRegistry {
@@ -33,40 +44,63 @@ impl PublicKeyRegistry {
 
             let pem_bytes = std::fs::read(path.clone())?;
             let ec_public_key = EcPublicKey::import(&pem_bytes)?;
-            let key_id = hex_fingerprint(ec_public_key.fingerprint()?.as_slice());
-            map.insert(sub.to_string(), (key_id, ec_public_key));
+            let key_id = ec_public_key.key_id()?;
+            map.insert(key_id, (sub.to_string(), ec_public_key));
         }
 
         Ok(Self(Arc::new(Mutex::new(map))))
     }
 
-    pub fn get_sub(&self, sub: &str) -> Option<(String, EcPublicKey)> {
-        self.0.lock().unwrap().get(sub).cloned()
+    pub fn get(&self, key_id: &str) -> Option<(String, EcPublicKey)> {
+        self.0.lock().unwrap().get(key_id).cloned()
     }
 }
 
-#[derive(Clone, FromRef)]
+#[derive(Clone)]
 pub struct AppState {
     listen_addr: String,
     public_key_registry: PublicKeyRegistry,
+    allowed_audiences: HashSet<String>,
 }
 
 impl AppState {
     pub async fn from_config(config: &Config) -> Result<Self, AppStateSetupError> {
         let listen_addr = config.listen_addr().clone();
-        let public_key_registry = PublicKeyRegistry::from_path(&config.pem_data_path())?;
+        let public_key_registry = PublicKeyRegistry::from_path(config.pem_data_path())?;
+        // Turn the vec into a set
+        let allowed_audiences = config
+            .allowed_audiences()
+            .iter().cloned()
+            .collect();
         Ok(Self {
             listen_addr,
             public_key_registry,
+            allowed_audiences,
         })
+    }
+
+    pub fn listen_addr(&self) -> &str {
+        &self.listen_addr
     }
 
     pub fn public_key_registry(&self) -> &PublicKeyRegistry {
         &self.public_key_registry
     }
 
-    pub fn listen_addr(&self) -> &str {
-        &self.listen_addr
+    pub fn allowed_audiences(&self) -> &HashSet<String> {
+        &self.allowed_audiences
+    }
+}
+
+impl FromRef<AppState> for AllowedAudiences {
+    fn from_ref(state: &AppState) -> Self {
+        AllowedAudiences(state.allowed_audiences.clone())
+    }
+}
+
+impl FromRef<AppState> for PublicKeyRegistry {
+    fn from_ref(state: &AppState) -> Self {
+        state.public_key_registry.clone()
     }
 }
 

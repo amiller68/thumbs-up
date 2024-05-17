@@ -13,6 +13,9 @@ pub struct Config {
 
     // Path to pems directory
     pem_data_path: PathBuf,
+    // Allowed audiences
+    allowed_audiences: Vec<String>,
+
     // Logging Level
     log_level: tracing::Level,
 }
@@ -62,11 +65,20 @@ impl Config {
             }
         };
 
+        let allowed_audiences = match env::var("ALLOWED_AUDIENCES") {
+            Ok(audiences) => audiences.split(',').map(|s| s.to_string()).collect(),
+            Err(_e) => {
+                tracing::warn!("No ALLOWED_AUDIENCES found in .env. Using default");
+                vec![]
+            }
+        };
+
         Ok(Config {
             listen_address,
             listen_port,
             pem_data_path,
             log_level,
+            allowed_audiences,
         })
     }
 
@@ -80,6 +92,10 @@ impl Config {
 
     pub fn log_level(&self) -> &tracing::Level {
         &self.log_level
+    }
+
+    pub fn allowed_audiences(&self) -> &Vec<String> {
+        &self.allowed_audiences
     }
 }
 
