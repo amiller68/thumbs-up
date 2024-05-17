@@ -9,6 +9,9 @@ RUN mkdir -p /app
 WORKDIR /app
 COPY . .
 
+# Install cmake (required by some dependencies)
+RUN apt-get update && apt-get install -y cmake libclang-dev
+
 # Build the app
 RUN cargo build --release
 
