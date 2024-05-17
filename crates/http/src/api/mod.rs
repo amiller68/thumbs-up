@@ -6,8 +6,6 @@ use http::header::{ACCEPT, ORIGIN};
 use http::Method;
 use tower_http::cors::{Any, CorsLayer};
 
-
-
 use crate::app::AppState;
 use crate::extractors::ApiIdentity;
 

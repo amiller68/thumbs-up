@@ -68,10 +68,7 @@ impl AppState {
         let listen_addr = config.listen_addr().clone();
         let public_key_registry = PublicKeyRegistry::from_path(config.pem_data_path())?;
         // Turn the vec into a set
-        let allowed_audiences = config
-            .allowed_audiences()
-            .iter().cloned()
-            .collect();
+        let allowed_audiences = config.allowed_audiences().iter().cloned().collect();
         Ok(Self {
             listen_addr,
             public_key_registry,
