@@ -1,0 +1,28 @@
+[package]
+name = "thumbs-up"
+version = "0.0.0"
+edition = "2021"
+license = "LicenseRef-LICENSE"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde = "^1.0"
+jwt-simple = "^0.12"
+rand = "^0.8"
+p384 = { version = "^0.13", features = ["arithmetic", "alloc", "pkcs8", "pem"] }
+rand_core = "^0.6"
+base64ct = "^1.6"
+blake3 = "^1.4"
+sha2 = "^0.10"
+chrono = "^0.4"
+thiserror = "1.0.57"
+anyhow = "1.0.80"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "^0.2", features = ["js"] }
+console_error_panic_hook = "^0.1"
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "^0.3"

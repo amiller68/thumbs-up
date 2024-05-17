@@ -1,8 +1,66 @@
-use super::hex_fingerprint;
-use crate::prelude::*;
+use std::error::Error;
+use std::ops::Deref;
+
 use jwt_simple::prelude::*;
 use rand::{distributions::Alphanumeric, Rng};
-use std::error::Error;
+
+use crate::prelude::{EcKey, EcPublicKey, KeyError};
+
+// TODO: types for custom claims
+// TODO: types for key id
+// TODO: types for audiences
+// TODO: types for subject id
+
+fn pretty_hex_fingerprint(fingerprint_bytes: &[u8]) -> String {
+    fingerprint_bytes
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<Vec<String>>()
+        .join(":")
+}
+
+fn hex_fingerprint(fingerprint_bytes: &[u8]) -> String {
+    fingerprint_bytes
+        .iter()
+        .fold(String::new(), |chain, byte| format!("{chain}{byte:02x}"))
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct TUVerificationOptions(VerificationOptions);
+
+impl Deref for TUVerificationOptions {
+    type Target = VerificationOptions;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl TUVerificationOptions {
+    pub fn reject_before(&mut self, time: u64) -> &mut Self {
+        self.0.reject_before = Some(Duration::from_secs(time));
+        self
+    }
+
+    pub fn required_subject(&mut self, subject: &str) -> &mut Self {
+        self.0.required_subject = Some(subject.to_string());
+        self
+    }
+
+    pub fn required_nonce(&mut self, nonce: &str) -> &mut Self {
+        self.0.required_nonce = Some(nonce.to_string());
+        self
+    }
+
+    pub fn allowed_issuers(&mut self, issuers: Option<HashSet<String>>) -> &mut Self {
+        self.0.allowed_issuers = issuers;
+        self
+    }
+
+    pub fn allowed_audiences(&mut self, audiences: Option<HashSet<String>>) -> &mut Self {
+        self.0.allowed_audiences = audiences;
+        self
+    }
+}
 
 /// How long Nonce values are
 pub const NONCE_SIZE: usize = 12;
@@ -59,6 +117,7 @@ pub trait PrivateKey: Sized + Send {
     /// wrapping key.
     fn import_bytes(der_bytes: &[u8]) -> Result<Self, Self::Error>;
 
+    /// Get the public key for the token
     fn public_key(&self) -> Result<Self::PublicKey, Self::Error>;
 }
 
@@ -81,6 +140,16 @@ pub trait PublicKey: Sized + Send + Sync {
     /// usually presented to users by running it through the prettifier
     /// [`crate::key_seal::pretty_fingerprint()`].
     fn fingerprint(&self) -> Result<[u8; FINGERPRINT_SIZE], Self::Error>;
+
+    /// Get the key id for the token
+    fn key_id(&self) -> Result<String, Self::Error> {
+        Ok(hex_fingerprint(&self.fingerprint()?))
+    }
+
+    /// Get the pretty key id for the token
+    fn pretty_key_id(&self) -> Result<String, Self::Error> {
+        Ok(pretty_hex_fingerprint(&self.fingerprint()?))
+    }
 
     /// IMPORT A STANDARD PEM FORMATTED VERSION OF AN EC KEY.
     fn import(pem_bytes: &[u8]) -> Result<Self, Self::Error>;
@@ -281,15 +350,25 @@ impl ApiToken {
     /// # Arguments
     /// * `token` - The token to decode
     /// * `public_key` - The public key to use to verify the token
-    pub fn decode_from(token: &str, public_key: &EcPublicKey) -> Result<Self, KeyError> {
+    /// * `options` - Options for verifying the token
+    pub fn decode_from(
+        token: &str,
+        public_key: &EcPublicKey,
+        options: Option<TUVerificationOptions>,
+    ) -> Result<Self, KeyError> {
         let key_bytes = public_key.export_bytes()?;
         let key_id = hex_fingerprint(public_key.fingerprint()?.as_slice());
         let decoding_key = ES384PublicKey::from_der(&key_bytes)
             .map_err(KeyError::JwtError)?
             .with_key_id(&key_id);
 
+        let options = match options {
+            Some(opt) => Some(opt.0),
+            None => None,
+        };
+
         let token = decoding_key
-            .verify_token::<NoCustomClaims>(token, None)
+            .verify_token::<NoCustomClaims>(token, options)
             .map_err(KeyError::JwtError)?;
 
         Ok(Self(token))
@@ -299,13 +378,13 @@ impl ApiToken {
     /// # Arguments
     /// * `private_key` - The private key to use to sign the token
     /// # Returns
-    /// A string representation of the token
+    /// A string representation of the tokenZZ
     pub fn encode_to(&self, signing_key: &EcKey) -> Result<String, KeyError> {
         let pem_bytes = signing_key.export()?;
         let pem_string = std::str::from_utf8(&pem_bytes).map_err(KeyError::InvalidUtf8)?;
         let encoding_key = ES384KeyPair::from_pem(pem_string)
             .map_err(KeyError::JwtError)?
-            .with_key_id(&hex_fingerprint(signing_key.fingerprint()?.as_slice()));
+            .with_key_id(&signing_key.public_key()?.key_id()?);
         let claims = &self.0;
         let token = encoding_key
             .sign::<NoCustomClaims>(claims.clone())

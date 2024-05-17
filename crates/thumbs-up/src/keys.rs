@@ -9,20 +9,6 @@ pub use ec_key::EcKey;
 pub use ec_public_key::EcPublicKey;
 pub use error::KeyError;
 
-pub fn pretty_fingerprint(fingerprint_bytes: &[u8]) -> String {
-    fingerprint_bytes
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect::<Vec<String>>()
-        .join(":")
-}
-
-pub fn hex_fingerprint(fingerprint_bytes: &[u8]) -> String {
-    fingerprint_bytes
-        .iter()
-        .fold(String::new(), |chain, byte| format!("{chain}{byte:02x}"))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -64,9 +50,9 @@ mod tests {
 
         let claims = ApiToken::new("test".to_string(), "test".to_string());
         let token = claims.encode_to(&key)?;
-        let _ = ApiToken::decode_from(&token, &public_key)?;
+        let _ = ApiToken::decode_from(&token, &public_key, None)?;
         let metadata = ApiTokenMetadata::try_from(token)?;
-        let key_id = hex_fingerprint(public_key.fingerprint()?.as_slice());
+        let key_id = public_key.key_id()?;
 
         // Check the metadata
         assert_eq!(metadata.alg(), "ES384");
@@ -91,10 +77,12 @@ mod tests {
 
         let claims = ApiToken::new("test".to_string(), "test".to_string());
         let token = claims.encode_to(&key)?;
-        let _ = ApiToken::decode_from(&token, &bad_public_key)?;
+        let _ = ApiToken::decode_from(&token, &bad_public_key, None)?;
 
         Ok(())
     }
+
+    // TODO: test verification options
 
     #[cfg(not(target_arch = "wasm32"))]
     mod native_tests {
