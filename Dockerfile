@@ -21,7 +21,7 @@ RUN apt-get update -y \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy the server binary to the /app directory
-COPY --from=builder /app/target/release/http /app/
+COPY --from=builder /app/target/release/thumbs-up-http/ /app/
 
 # Set any required env variables and
 ENV RUST_LOG="info"
@@ -30,5 +30,5 @@ ENV LISTEN_PORT="3000"
 EXPOSE 3000
 
 # Run the server
-CMD ["/app/thumbs_up_http"]
+CMD ["/app/thumbs-up-http"]
 

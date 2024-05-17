@@ -1,0 +1,24 @@
+[licenses]
+# List of explicitly allowed licenses
+allow = [
+  "Apache-2.0",
+  "MIT",
+  "Unicode-DFS-2016",
+  "Unlicense",
+  "ISC",
+  "BSD-2-Clause",
+]
+
+private = { ignore = true }
+
+[bans]
+# Deny specific crate versions
+multiple-versions = "deny"
+
+# An example of banning a crate
+# crates = [
+#     # Each entry is a table with optional attributes:
+#     # name = "ansi_term" # crate name
+#     # version = "0.11.0" # crate version
+#     # source = "registry+https://github.com/rust-lang/crates.io-index" # crate source
+# ]

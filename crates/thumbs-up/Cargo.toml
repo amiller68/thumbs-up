@@ -9,7 +9,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 serde = "^1.0"
-jwt-simple = "^0.11"
+jwt-simple = "^0.12"
 rand = "^0.8"
 p384 = { version = "^0.13", features = ["arithmetic", "alloc", "pkcs8", "pem"] }
 rand_core = "^0.6"
@@ -19,15 +19,6 @@ sha2 = "^0.10"
 chrono = "^0.4"
 thiserror = "1.0.57"
 anyhow = "1.0.80"
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tokio = { version = "^1", default-features = false, features = [
-  "rt",
-  "rt-multi-thread",
-  "test-util",
-  "tokio-macros",
-  "macros",
-] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "^0.2", features = ["js"] }

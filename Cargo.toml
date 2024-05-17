@@ -1,3 +1,7 @@
 [workspace]
 resolver = "2"
 members = ["crates/thumbs-up", "crates/http"]
+
+[profile.release]
+codegen-units = 1
+lto = true

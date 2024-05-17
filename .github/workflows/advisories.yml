@@ -2,7 +2,7 @@ name: 🛡 Weekly Dependency Advisories
 on:
   schedule:
     # Run every Monday at 10am ET (2pm UTC)
-    - cron: '0 14 * * 1'
+    - cron: "0 14 * * 1"
 jobs:
   cargo-audit:
     runs-on: ubuntu-latest
