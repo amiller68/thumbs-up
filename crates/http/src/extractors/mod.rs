@@ -146,7 +146,7 @@ impl IntoResponse for ApiIdentityError {
             }
             _ => {
                 let err_msg = serde_json::json!({ "status": "invalid bearer token" });
-                (StatusCode::BAD_REQUEST, Json(err_msg)).into_response()
+                (StatusCode::UNAUTHORIZED, Json(err_msg)).into_response()
             }
         }
     }
