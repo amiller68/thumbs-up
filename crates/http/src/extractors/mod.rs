@@ -115,9 +115,6 @@ pub enum ApiIdentityError {
     #[error("key ID included in JWT header did not match our expected format")]
     InvalidKeyId,
 
-    #[error("provided subject was not a valid UUID")]
-    InvalidSubject,
-
     #[error("authenticated route was missing authorization header")]
     MissingHeader(TypedHeaderRejection),
 
@@ -145,6 +142,7 @@ impl IntoResponse for ApiIdentityError {
                 (StatusCode::INTERNAL_SERVER_ERROR, Json(err_msg)).into_response()
             }
             _ => {
+                tracing::error!("{:?}", self);
                 let err_msg = serde_json::json!({ "status": "invalid bearer token" });
                 (StatusCode::UNAUTHORIZED, Json(err_msg)).into_response()
             }
